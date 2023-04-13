@@ -33,13 +33,13 @@
   .card{background-color:white;border-radius:5px;}
   </style>
 
-  <title>Rita's Kanban Board</title>
+  <title>{{ current_user.username }}'s Todo Board</title>
     <link rel="shortcut icon" href="/Users/ritakurban/Downloads/k.png" type="image/x-icon">
  </head>
  <header>
    <!-- Show current user's name -->
    {% if current_user.is_authenticated%}
-  <h2>{{ current_user.username }}'s Kanban Board</h2>
+  <h2>{{ current_user.username }}'s Todo Board</h2>
 {% endif %}
  </header>
   <body>

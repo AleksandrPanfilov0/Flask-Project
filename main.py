@@ -15,22 +15,26 @@ database_file = "sqlite:///{}".format(os.path.join(project_dir, "taskdb.db"))
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
 app.secret_key = "very secret"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 login = LoginManager()
 login.init_app(app)
 login.login_view = 'login'
 db = SQLAlchemy(app)
+
 
 class Task(db.Model):
     '''
     Define task name and status as well as connect it to the user table.
     '''
     __tablename__ = 'Task'
-    id = db.Column(db.Integer,primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(80), unique=True, nullable=False, primary_key=True)
     status = db.Column(db.String(80), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('User.id'))
+
     def __repr__(self):
         return "<Title: {}>".format(self.title)
+
 
 class User(UserMixin, db.Model):
     '''
@@ -41,8 +45,10 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(200))
     password = db.Column(db.String(200))
     task_id = db.relationship('Task', backref='user', lazy='dynamic')
+
     def __repr__(self):
         return "<Username: {}>".format(self.username)
+
 
 # Create db
 db.create_all()
@@ -56,6 +62,7 @@ def welcome():
     '''
     return redirect('login')
 
+
 @login.user_loader
 def load_user(id):
     '''
@@ -63,7 +70,8 @@ def load_user(id):
     '''
     return User.query.get(int(id))
 
-@app.route('/register', methods=['GET','POST'])
+
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     '''
     Register new users.
@@ -84,6 +92,7 @@ def register():
     elif request.method == 'GET':
         return render_template('register.html')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     ''' Log in existing users.
@@ -99,6 +108,7 @@ def login():
     elif request.method == 'GET':
         return render_template('login.html')
 
+
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     '''
@@ -106,6 +116,7 @@ def logout():
     '''
     session.pop('logged_in', None)
     return redirect('login')
+
 
 @app.route('/main', methods=["GET", "POST"])
 # Make sure only authorized users can access the main page
@@ -123,7 +134,7 @@ def home():
             if request.form.get("title") in [task.title for task in Task.query.all()]:
                 error = "This task already exists."
             else:
-                task = Task(id = 1, title=request.form.get("title"), status=request.form.get("status"), user_id = g.user.id)
+                task = Task(id=1, title=request.form.get("title"), status=request.form.get("status"), user_id=g.user.id)
                 tasks = Task.query.all()
 
                 db.session.add(task)
@@ -133,10 +144,12 @@ def home():
             print(e)
     # Sort tasks according to their status
     tasks = Task.query.filter_by(user_id=g.user.id).all()
-    todo = Task.query.filter_by(status='todo',user_id=g.user.id).all()
-    doing = Task.query.filter_by(status='doing',user_id=g.user.id).all()
-    done = Task.query.filter_by(status='done',user_id=g.user.id).all()
-    return render_template("home.html", error=error, tasks=tasks, todo=todo, doing=doing, done=done, myuser=current_user)
+    todo = Task.query.filter_by(status='todo', user_id=g.user.id).all()
+    doing = Task.query.filter_by(status='doing', user_id=g.user.id).all()
+    done = Task.query.filter_by(status='done', user_id=g.user.id).all()
+    return render_template("home.html", error=error, tasks=tasks, todo=todo, doing=doing, done=done,
+                           myuser=current_user)
+
 
 @app.route("/update", methods=["POST"])
 def update():
@@ -154,6 +167,7 @@ def update():
         print(e)
     return redirect("/main")
 
+
 @app.route("/delete", methods=["POST"])
 def delete():
     '''
@@ -164,6 +178,7 @@ def delete():
     db.session.delete(task)
     db.session.commit()
     return redirect("/main")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
